@@ -127,7 +127,7 @@ def create_vector_store(text):
 def create_conversation_chain(vector_store):
     """Create conversation chain."""
     llm = NvidiaLLM(
-        api_key="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"
+        api_key=API_KEY
     )
     
     memory = ConversationBufferMemory(
