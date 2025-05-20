@@ -14,7 +14,7 @@ import PyPDF2
 import docx
 from dotenv import load_dotenv
 from openai import OpenAI
-from pydantic import Field, root_validator
+from pydantic import Field, model_validator
 from langchain.prompts import PromptTemplate
 
 # Load environment variables
@@ -37,7 +37,7 @@ class NvidiaLLM(LLM):
     temperature: float = Field(default=0.6)
     api_key: str = Field(default="")
     
-    @root_validator(pre=True)
+    @model_validator(mode="before")
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that api key exists in environment."""
         api_key = API_KEY
@@ -119,8 +119,10 @@ def create_vector_store(text):
     # Create vector store
     vector_store = Chroma.from_texts(
         texts=chunks,
-        embedding=embeddings
+        embedding=embeddings,
+        persist_directory="./chroma_db"
     )
+
     
     return vector_store
 
