@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceInstructEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
@@ -14,7 +14,7 @@ import PyPDF2
 import docx
 from dotenv import load_dotenv
 from openai import OpenAI
-from pydantic import Field, root_validator
+from pydantic import Field, model_validator
 from langchain.prompts import PromptTemplate
 
 # Load environment variables
@@ -39,7 +39,7 @@ class NvidiaLLM(LLM):
     temperature: float = Field(default=0.6)
     api_key: str = Field(default="")
     
-    @root_validator(pre=True)
+    @model_validator(mode='before')
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that api key exists in environment."""
         api_key = values.get("api_key")
@@ -115,8 +115,11 @@ def create_vector_store(text):
     )
     chunks = text_splitter.split_text(text)
     
-    # Create embeddings
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    # Create embeddings using a more stable model
+    embeddings = HuggingFaceInstructEmbeddings(
+        model_name="hkunlp/instructor-large",
+        model_kwargs={"device": "cpu"}
+    )
     
     # Create vector store using FAISS
     vector_store = FAISS.from_texts(
