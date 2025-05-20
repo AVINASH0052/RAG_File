@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import HuggingFaceInstructEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
@@ -115,9 +115,9 @@ def create_vector_store(text):
     )
     chunks = text_splitter.split_text(text)
     
-    # Create embeddings using a more stable model
-    embeddings = HuggingFaceInstructEmbeddings(
-        model_name="hkunlp/instructor-large",
+    # Create embeddings using a simpler model
+    embeddings = HuggingFaceEmbeddings(
+        model_name="sentence-transformers/all-MiniLM-L6-v2",
         model_kwargs={"device": "cpu"}
     )
     
