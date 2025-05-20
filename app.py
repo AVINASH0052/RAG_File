@@ -40,7 +40,7 @@ class NvidiaLLM(LLM):
     @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that api key exists in environment."""
-        api_key = values.get("api_key")
+        api_key = API_KEY
         if not api_key:
             raise ValueError("api_key must be provided")
         
