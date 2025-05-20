@@ -2,7 +2,7 @@ import streamlit as st
 import os
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_community.vectorstores import FAISS
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain.llms.base import LLM
@@ -14,7 +14,7 @@ import PyPDF2
 import docx
 from dotenv import load_dotenv
 from openai import OpenAI
-from pydantic import Field, model_validator
+from pydantic import Field, root_validator
 from langchain.prompts import PromptTemplate
 
 # Load environment variables
@@ -28,6 +28,8 @@ if "conversation" not in st.session_state:
     st.session_state.conversation = None
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
+if "vector_store" not in st.session_state:
+    st.session_state.vector_store = None
 
 class NvidiaLLM(LLM):
     """Custom LLM class for NVIDIA API"""
@@ -37,10 +39,10 @@ class NvidiaLLM(LLM):
     temperature: float = Field(default=0.6)
     api_key: str = Field(default="")
     
-    @model_validator(mode="before")
+    @root_validator(pre=True)
     def validate_environment(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         """Validate that api key exists in environment."""
-        api_key = API_KEY
+        api_key = values.get("api_key")
         if not api_key:
             raise ValueError("api_key must be provided")
         
@@ -116,20 +118,18 @@ def create_vector_store(text):
     # Create embeddings
     embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
     
-    # Create vector store
-    vector_store = Chroma.from_texts(
+    # Create vector store using FAISS
+    vector_store = FAISS.from_texts(
         texts=chunks,
-        embedding=embeddings,
-        persist_directory="./chroma_db"
+        embedding=embeddings
     )
-
     
     return vector_store
 
 def create_conversation_chain(vector_store):
     """Create conversation chain."""
     llm = NvidiaLLM(
-        api_key=API_KEY
+        api_key="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"
     )
     
     memory = ConversationBufferMemory(
@@ -189,6 +189,7 @@ if uploaded_files:
     with st.spinner("Processing documents..."):
         raw_text = process_documents(uploaded_files)
         vector_store = create_vector_store(raw_text)
+        st.session_state.vector_store = vector_store
         st.session_state.conversation = create_conversation_chain(vector_store)
     st.success(f"Successfully processed {len(uploaded_files)} document(s)!")
 
